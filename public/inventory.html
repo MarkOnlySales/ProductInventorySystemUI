@@ -128,7 +128,7 @@
 
     const api = async (url, method = 'GET', body) => {
       try {
-        const res = await fetch(`http://localhost:5000/api/${url}`, {
+        const res = await fetch(`https://whiplash-ds3a.onrender.com/api/${url}`, {
           method,
           headers: body ? { 'Content-Type': 'application/json' } : {},
           body: body ? JSON.stringify(body) : undefined
@@ -317,7 +317,7 @@
       latestSearch = { type, value };
 
       try {
-        const res = await fetch(`http://localhost:5000/api/inventory/search?type=${type}&value=${encodeURIComponent(value)}`, { cache: 'no-store' });
+        const res = await fetch(`https://whiplash-ds3a.onrender.com/api/inventory/search?type=${type}&value=${encodeURIComponent(value)}`, { cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
           renderList(data, 'searchResults');

@@ -108,7 +108,7 @@
     };
 
     const fetchSuppliers = async () => {
-      const res = await fetch("http://localhost:5000/api/suppliers");
+      const res = await fetch("https://whiplash-ds3a.onrender.com/api/suppliers");
       const data = await res.json();
       renderList(data, "supplierList");
     };
@@ -117,7 +117,7 @@
       if (!confirm("Delete this supplier?")) return;
 
       try {
-        const res = await fetch(`http://localhost:5000/api/suppliers/${id}`, {
+        const res = await fetch(`https://whiplash-ds3a.onrender.com/api/suppliers/${id}`, {
           method: "DELETE"
         });
 
@@ -170,7 +170,7 @@
       }
 
       try {
-        const res = await fetch("http://localhost:5000/api/suppliers", {
+        const res = await fetch("https://whiplash-ds3a.onrender.com/api/suppliers", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body)
@@ -206,7 +206,7 @@
       }
 
       try {
-        const res = await fetch(`http://localhost:5000/api/suppliers/${body._id}`, {
+        const res = await fetch(`https://whiplash-ds3a.onrender.com/api/suppliers/${body._id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body)
@@ -257,7 +257,7 @@
       latestSearch = $('searchValue').value.trim();
       if (!latestSearch) return;
 
-      const res = await fetch(`http://localhost:5000/api/suppliers/name/${encodeURIComponent(latestSearch)}`);
+      const res = await fetch(`https://whiplash-ds3a.onrender.com/api/suppliers/name/${encodeURIComponent(latestSearch)}`);
       if (!res.ok) {
         $('searchResults').innerHTML = '<p class="message-text">No suppliers found</p>';
         return;

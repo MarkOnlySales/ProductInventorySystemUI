@@ -150,7 +150,7 @@
     // Load Summary Cards - Updated to match features branch data structure
     async function loadSummaryCards() {
       try {
-        const res = await fetch("http://localhost:5000/api/inventory");
+        const res = await fetch("https://whiplash-ds3a.onrender.com/api/inventory");
         const data = await res.json();
 
         if (!Array.isArray(data) || !data.length) return;
@@ -189,28 +189,28 @@
     async function loadStats() {
       try {
         // Load products count
-        fetch("http://localhost:5000/api/products")
+        fetch("https://whiplash-ds3a.onrender.com/api/products")
           .then(res => res.json())
           .then(data => {
             document.getElementById("totalProducts").textContent = data.length || 0;
           });
 
         // Load categories count
-        fetch("http://localhost:5000/api/categories")
+        fetch("https://whiplash-ds3a.onrender.com/api/categories")
           .then(res => res.json())
           .then(data => {
             document.getElementById("totalCategories").textContent = data.length || 0;
           });
 
         // Load suppliers count
-        fetch("http://localhost:5000/api/suppliers")
+        fetch("https://whiplash-ds3a.onrender.com/api/suppliers")
           .then(res => res.json())
           .then(data => {
             document.getElementById("totalSuppliers").textContent = data.length || 0;
           });
 
         // Load warehouses count
-        fetch("http://localhost:5000/api/warehouses")
+        fetch("https://whiplash-ds3a.onrender.com/api/warehouses")
           .then(res => res.json())
           .then(data => {
             document.getElementById("totalWarehouses").textContent = data.length || 0;
@@ -228,7 +228,7 @@
     async function loadFormOptions() {
       try {
         // Load categories
-        fetch("http://localhost:5000/api/categories")
+        fetch("https://whiplash-ds3a.onrender.com/api/categories")
           .then(res => res.json())
           .then(data => {
             const select = document.getElementById("productCategory");
@@ -241,7 +241,7 @@
           });
 
         // Load suppliers
-        fetch("http://localhost:5000/api/suppliers")
+        fetch("https://whiplash-ds3a.onrender.com/api/suppliers")
           .then(res => res.json())
           .then(data => {
             const select = document.getElementById("productSupplier");

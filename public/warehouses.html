@@ -91,7 +91,7 @@
     let latestSearch = null;
 
     const fetchWarehouses = async () => {
-      const res = await fetch("http://localhost:5000/api/warehouses");
+      const res = await fetch("https://whiplash-ds3a.onrender.com/api/warehouses");
       const data = await res.json();
       renderList(data, "warehouseList");
     };
@@ -100,7 +100,7 @@
       if (!confirm("Delete this warehouse?")) return;
 
       try {
-        const res = await fetch(`http://localhost:5000/api/warehouses/${id}`, {
+        const res = await fetch(`https://whiplash-ds3a.onrender.com/api/warehouses/${id}`, {
           method: "DELETE"
         });
 
@@ -152,7 +152,7 @@
       const body = Object.fromEntries(formData.entries());
 
       try {
-        const res = await fetch("http://localhost:5000/api/warehouses", {
+        const res = await fetch("https://whiplash-ds3a.onrender.com/api/warehouses", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body)
@@ -187,7 +187,7 @@
       const location = $('updateLocation').value;
       const capacity = Number($('updateCapacity').value);
 
-      await fetch(`http://localhost:5000/api/warehouses/${id}`, {
+      await fetch(`https://whiplash-ds3a.onrender.com/api/warehouses/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, location, capacity })
@@ -230,7 +230,7 @@
 
       latestSearch = { type, value };
 
-      const res = await fetch(`http://localhost:5000/api/warehouses/${type}/${value}`);
+      const res = await fetch(`https://whiplash-ds3a.onrender.com/api/warehouses/${type}/${value}`);
       if (!res.ok) {
         $('searchResults').innerHTML = '<p class="message-text">No warehouses found</p>';
         if ($('searchStatus')) {
