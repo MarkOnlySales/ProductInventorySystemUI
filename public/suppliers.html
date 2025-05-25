@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Supplier Management</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/suppliers.css" />
+</head>
+<body>
+  <header>
+    <a href="index.html" class="back-link">← Dashboard</a>
+    <h1>Supplier Management</h1>
+  </header>
+
+  <main class="main-container">
+    <!-- Left Panel -->
+    <div class="left-panel">
+      <section class="form-section">
+        <h2>Search Suppliers</h2>
+        <form id="searchForm">
+          <input type="text" id="searchValue" placeholder="Enter supplier name..." required />
+          <button type="submit">Search</button>
+        </form>
+        <div id="searchStatus" class="status-message"></div>
+        <ul id="searchResults"></ul>
+      </section>
+
+      <section class="form-section">
+        <h2>Add Supplier</h2>
+        <form id="addForm">
+          <input type="text" name="name" placeholder="Supplier Name" required />
+          <input type="tel" name="contact_info" placeholder="Phone Number" required pattern="^[0-9+\-\s()]{7,20}$" title="Enter a valid phone number." />
+          <input type="email" name="email" placeholder="Email Address" required />
+          <input type="text" name="address" placeholder="Physical Address" required />
+          <input type="number" name="rating" placeholder="Rating (1-5)" min="1" max="5" />
+          <button type="submit">Add Supplier</button>
+        </form>
+      </section>
+    </div>
+
+    <!-- Right Panel -->
+    <div class="right-panel">
+      <section class="list-section">
+        <h2>All Suppliers</h2>
+        <button type="button" class="button-primary" onclick="fetchSuppliers()">Refresh List</button>
+        <ul id="supplierList"></ul>
+      </section>
+    </div>
+  </main>
+
+  <!-- Update Modal -->
+  <div class="modal" id="updateModal">
+    <div class="modal-content">
+      <button class="close-btn" onclick="hideModal()">×</button>
+      <h2>Update Supplier</h2>
+      <form id="updateForm">
+        <input type="hidden" id="updateId" name="_id" />
+        <div class="form-group">
+          <label for="updateName">Name:</label>
+          <input type="text" id="updateName" name="name" placeholder="Supplier Name" required />
+        </div>
+        <div class="form-group">
+          <label for="updateContact">Contact Info:</label>
+          <input type="tel" id="updateContact" name="contact_info" placeholder="Phone Number" required pattern="^[0-9+\-\s()]{7,20}$" title="Enter a valid phone number." />
+        </div>
+        <div class="form-group">
+          <label for="updateEmail">Email:</label>
+          <input type="email" id="updateEmail" name="email" placeholder="Email Address" required />
+        </div>
+        <div class="form-group">
+          <label for="updateAddress">Address:</label>
+          <input type="text" id="updateAddress" name="address" placeholder="Physical Address" required />
+        </div>
+        <div class="form-group">
+          <label for="updateRating">Rating:</label>
+          <input type="number" id="updateRating" name="rating" placeholder="Rating (1-5)" min="1" max="5" />
+        </div>
+        <button type="submit">Save Changes</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Alert Box -->
+  <div id="alertBox" style="display:none;" class="alert-box">
+    <div class="alert-content">
+      <span id="alertMessage"></span>
+      <button class="alert-close" onclick="hideAlert()">×</button>
+    </div>
+  </div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    const updateModal = $('updateModal');
+    const searchForm = $('searchForm');
+    let latestSearch = null;
+
+    const isValidPhoneNumber = value => /^[0-9+\-\s()]{7,20}$/.test(value.trim());
+
+    const showAlert = message => {
+      $('alertMessage').textContent = message;
+      $('alertBox').style.display = 'flex';
+      setTimeout(hideAlert, 6000);
+    };
+
+    const hideAlert = () => {
+      $('alertBox').style.display = 'none';
+    };
+
+    const fetchSuppliers = async () => {
+      const res = await fetch("http://localhost:5000/api/suppliers");
+      const data = await res.json();
+      renderList(data, "supplierList");
+    };
+
+    const deleteSupplier = async id => {
+      if (!confirm("Delete this supplier?")) return;
+
+      try {
+        const res = await fetch(`http://localhost:5000/api/suppliers/${id}`, {
+          method: "DELETE"
+        });
+
+        const result = await res.json();
+
+        if (res.status === 409) {
+          showAlert(result.message || "Supplier is still linked to products.");
+          return;
+        }
+
+        if (!res.ok) throw new Error(result.message || "Failed to delete supplier");
+
+        alert("Supplier deleted successfully.");
+        fetchSuppliers();
+        refreshSearch();
+
+      } catch (err) {
+        console.error('[deleteSupplier] Error:', err);
+        showAlert("Server error occurred while deleting.");
+      }
+    };
+
+    const openUpdateModal = supplier => {
+      $('updateId').value = supplier._id;
+      Object.entries(supplier).forEach(([key, val]) => {
+        let elementId = `update${key.charAt(0).toUpperCase() + key.slice(1)}`;
+        if (key === 'contact_info') elementId = 'updateContact';
+        const element = $(elementId);
+        if (element) element.value = val || '';
+      });
+      updateModal.style.display = 'flex';
+    };
+
+    const hideModal = () => updateModal.style.display = 'none';
+
+    const refreshSearch = () => {
+      if (!latestSearch) return;
+      const event = new Event('submit');
+      searchForm.dispatchEvent(event);
+    };
+
+    $('addForm').addEventListener("submit", async e => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const body = Object.fromEntries(formData.entries());
+
+      if (!isValidPhoneNumber(body.contact_info)) {
+        showAlert("Please enter a valid phone number for Contact Info.");
+        return;
+      }
+
+      try {
+        const res = await fetch("http://localhost:5000/api/suppliers", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        });
+
+        const result = await res.json();
+
+        if (res.status === 409) {
+          showAlert(result.message || "Duplicate supplier.");
+          return;
+        }
+
+        if (!res.ok) throw new Error(result.message || "Failed to add supplier.");
+
+        alert("Supplier added!");
+        e.target.reset();
+        fetchSuppliers();
+
+      } catch (err) {
+        console.error('[addSupplier] Error:', err);
+        showAlert("Server error occurred while adding supplier.");
+      }
+    });
+
+    $('updateForm').addEventListener("submit", async e => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const body = Object.fromEntries(formData.entries());
+
+      if (!isValidPhoneNumber(body.contact_info)) {
+        showAlert("Please enter a valid phone number for Contact Info.");
+        return;
+      }
+
+      try {
+        const res = await fetch(`http://localhost:5000/api/suppliers/${body._id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        });
+
+        const result = await res.json();
+
+        if (!res.ok) throw new Error(result.message || "Failed to update supplier.");
+
+        alert("Supplier updated!");
+        hideModal();
+        fetchSuppliers();
+        refreshSearch();
+
+      } catch (err) {
+        console.error('[updateSupplier] Error:', err);
+        showAlert("Server error occurred while updating supplier.");
+      }
+    });
+
+    const renderList = (data, targetId, statusElement = null) => {
+      const ul = $(targetId);
+      if (!data.length) {
+        if (statusElement) statusElement.textContent = 'No suppliers found';
+        ul.innerHTML = '<p class="message-text">No suppliers found</p>';
+        return;
+      }
+
+      ul.innerHTML = data.map(s => `
+        <li class="card">
+          <div class="card-content">
+            <div><strong>Name:</strong> ${s.name}</div>
+            <div><strong>Email:</strong> ${s.email || 'N/A'}</div>
+            <div><strong>Rating:</strong> ${s.rating || 'N/A'}</div>
+            <div><strong>Contact:</strong> ${s.contact_info || 'N/A'}</div>
+            <div><strong>Address:</strong> ${s.address || 'N/A'}</div>
+          </div>
+          <div class="card-actions">
+            <button class="btn btn-update" onclick='openUpdateModal(${JSON.stringify(s)})'>Update</button>
+            <button class="btn btn-delete" onclick="deleteSupplier('${s._id}')">Delete</button>
+          </div>
+        </li>
+      `).join('');
+    };
+
+    searchForm.addEventListener("submit", async e => {
+      e.preventDefault();
+      latestSearch = $('searchValue').value.trim();
+      if (!latestSearch) return;
+
+      const res = await fetch(`http://localhost:5000/api/suppliers/name/${encodeURIComponent(latestSearch)}`);
+      if (!res.ok) {
+        $('searchResults').innerHTML = '<p class="message-text">No suppliers found</p>';
+        return;
+      }
+
+      const data = await res.json();
+      renderList(Array.isArray(data) ? data : [data], "searchResults", $('searchStatus'));
+    });
+
+    fetchSuppliers();
+  </script>
+</body>
+</html>

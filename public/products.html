@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Product Management</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/products.css" />
+</head>
+<body>
+  <header>
+    <a href="index.html" class="back-link">← Dashboard</a>
+    <h1>Product Management</h1>
+  </header>
+
+  <main class="main-container">
+    <!-- Left Panel - Minimized -->
+    <div class="left-panel">
+      <section class="form-section">
+        <h2>Add Product</h2>
+        <form id="productForm">
+          <input type="text" name="name" placeholder="Product Name" required />
+          <textarea name="description" placeholder="Description" required></textarea>
+          <input type="number" step="0.01" name="price" placeholder="Price" required />
+          <label>Category:</label>
+          <select name="category_id" id="categorySelect" required></select>
+          <label>Supplier:</label>
+          <select name="supplier_id" id="supplierSelect" required></select>
+          <button type="submit">Add Product</button>
+        </form>
+      </section>
+
+      <section class="form-section">
+        <h2>Search Product</h2>
+        <input type="text" id="searchInput" placeholder="Enter product name..." />
+        <button type="button" class="button-primary" onclick="searchProduct()">Search</button>
+        <div id="searchResult"></div>
+      </section>
+    </div>
+
+    <!-- Right Panel -->
+    <div class="right-panel">
+      <section class="list-section">
+        <h2>All Products</h2>
+        <button type="button" class="button-primary" onclick="fetchProducts()">Refresh List</button>
+        <ul id="productList"></ul>
+      </section>
+    </div>
+  </main>
+
+  <!-- Modal for Update -->
+  <div class="modal" id="updateModal">
+    <div class="modal-content">
+      <button class="close-btn" onclick="closeModal()">×</button>
+      <h3>Edit Product</h3>
+      <form id="updateForm">
+        <input type="hidden" name="id" />
+        <input type="text" name="name" placeholder="Product Name" required />
+        <textarea name="description" placeholder="Description" required></textarea>
+        <input type="number" step="0.01" name="price" placeholder="Price" required />
+        <label>Category:</label>
+        <select name="category_id" id="updateCategorySelect" required></select>
+        <label>Supplier:</label>
+        <select name="supplier_id" id="updateSupplierSelect" required></select>
+        <button type="submit">Update Product</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+
+    async function fetchCategories(targetId = "categorySelect") {
+      const res = await fetch("http://localhost:5000/api/categories");
+      const data = await res.json();
+      const select = $(targetId);
+      select.innerHTML = "";
+      data.forEach(c => {
+        const option = document.createElement("option");
+        option.value = c._id;
+        option.textContent = c.name;
+        select.appendChild(option);
+      });
+    }
+
+    async function fetchSuppliers(targetId = "supplierSelect") {
+      const res = await fetch("http://localhost:5000/api/suppliers");
+      const data = await res.json();
+      const select = $(targetId);
+      select.innerHTML = "";
+      data.forEach(s => {
+        const option = document.createElement("option");
+        option.value = s._id;
+        option.textContent = s.name;
+        select.appendChild(option);
+      });
+    }
+
+    async function fetchProducts() {
+      const res = await fetch("http://localhost:5000/api/products");
+      const data = await res.json();
+      const list = $("productList");
+      
+      if (!data.length) {
+        list.innerHTML = '<p class="message-text">No products found</p>';
+        return;
+      }
+      
+      list.innerHTML = "";
+      data.forEach(p => {
+        const li = document.createElement("li");
+        li.className = 'card';
+        li.innerHTML = `
+          <div class="card-content">
+            <div><strong>Name:</strong> ${p.name}</div>
+            <div><strong>Price:</strong> ₱${p.price}</div>
+            <div><strong>Description:</strong> ${p.description}</div>
+            <div><strong>Category:</strong> ${p.category_id?.name || 'N/A'}</div>
+            <div><strong>Supplier:</strong> ${p.supplier_id?.name || 'N/A'}</div>
+          </div>
+          <div class="card-actions">
+            <button class="btn btn-update" onclick='editProduct(${JSON.stringify(p)})'>Edit</button>
+            <button class="btn btn-delete" onclick="deleteProduct('${p._id}')">Delete</button>
+          </div>
+        `;
+        list.appendChild(li);
+      });
+    }
+
+    async function deleteProduct(id) {
+      if (!confirm("Are you sure you want to delete this product?")) return;
+      const res = await fetch(`http://localhost:5000/api/products/${id}`, { method: "DELETE" });
+      const result = await res.json();
+      alert(result.message || "Product deleted.");
+      fetchProducts();
+    }
+
+    function editProduct(product) {
+      const form = $("updateForm");
+      form.id.value = product._id;
+      form.name.value = product.name;
+      form.description.value = product.description;
+      form.price.value = product.price;
+      $("updateCategorySelect").value = product.category_id?._id || "";
+      $("updateSupplierSelect").value = product.supplier_id?._id || "";
+      $("updateModal").style.display = "flex";
+    }
+
+    function closeModal() {
+      $("updateModal").style.display = "none";
+    }
+
+    $("productForm").addEventListener("submit", async function(e) {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const body = Object.fromEntries(formData.entries());
+      const res = await fetch("http://localhost:5000/api/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      const result = await res.json();
+      alert("Product added!");
+      e.target.reset();
+      fetchProducts();
+    });
+
+    $("updateForm").addEventListener("submit", async function(e) {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const body = Object.fromEntries(formData.entries());
+      const id = body.id;
+      const res = await fetch(`http://localhost:5000/api/products/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      const result = await res.json();
+      alert("Product updated!");
+      closeModal();
+      fetchProducts();
+    });
+
+    async function searchProduct() {
+      const name = $("searchInput").value.trim();
+      if (!name) return alert("Enter a product name");
+      const res = await fetch(`http://localhost:5000/api/products/name/${name}`);
+      const result = await res.json();
+      const div = $("searchResult");
+      if (res.status !== 200) {
+        div.innerHTML = `<p style="color:red">${result.message}</p>`;
+      } else {
+        div.innerHTML = '';
+        result.forEach(product => {
+          div.innerHTML += `
+            <p><strong>${product.name}</strong> – ₱${product.price}</p>
+            <p>${product.description}</p>
+          `;
+        });
+      }
+    }
+
+    // Initialize
+    fetchCategories();
+    fetchSuppliers();
+    fetchCategories("updateCategorySelect");
+    fetchSuppliers("updateSupplierSelect");
+    fetchProducts();
+  </script>
+</body>
+</html>
